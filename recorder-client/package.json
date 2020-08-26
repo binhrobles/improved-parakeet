@@ -1,7 +1,5 @@
 {
   "dependencies": {
-    "@aws-sdk/eventstream-marshaller": "^0.1.0-preview.2",
-    "@aws-sdk/util-utf8-node": "^0.1.0-preview.1",
     "keypress": "^0.2.1",
     "mic": "^2.1.2",
     "ws": "^7.3.1"
