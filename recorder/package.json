@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "aws-sdk": "^2.739.0",
-    "keypress": "^0.2.1",
-    "mic": "^2.1.2"
-  }
-}

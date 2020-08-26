@@ -1,0 +1,3 @@
+name: transcribe-backend
+runtime: nodejs
+description: Serverless backend suite for transcribe project
