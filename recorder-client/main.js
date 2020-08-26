@@ -33,6 +33,10 @@ ws.on('open', () => {
   })
 })
 
+ws.on('close', () => {
+  process.exit()
+})
+
 // set up keypress functionality
 let streaming = false
 keypress(process.stdin)
@@ -63,3 +67,4 @@ process.stdin.on('keypress', (ch, key) => {
 
 process.stdin.setRawMode(true)
 process.stdin.resume()
+console.log('Space to begin')
