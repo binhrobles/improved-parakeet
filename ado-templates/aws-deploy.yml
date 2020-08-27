@@ -76,7 +76,7 @@ jobs:
         inputs:
           bucketName: $(bucketName)
           globExpressions: $(archiveName)
-          targetFolder: '$(applicationName)/$(archiveName)'
+          targetFolder: $(applicationName)
           regionName: $(aws.region)
         env:  # explicitly map in secret env vars
           AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
