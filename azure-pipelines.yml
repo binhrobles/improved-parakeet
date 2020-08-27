@@ -1,0 +1,35 @@
+# Docker
+# Build a Docker image 
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+- master
+
+resources:
+- repo: self
+
+stages:
+- stage: Build
+  displayName: Build images
+  jobs:
+  variables:
+    imageName: 'transcriber-transcribe'
+  - job: Transcriber
+    displayName: Build Transcriber
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      displayName: Build image
+      inputs:
+        repository: $(imageName)
+        command: build
+        dockerfile: '$(Build.SourcesDirectory)/transcriber/Dockerfile'
+          
+    - task: Docker@2
+      displayName: Push image
+      inputs:
+        containerRegistry: '$(dockerHub)'
+        repository: '$(imageName)'
+        command: 'push'
+        tags: '$(Build.BuildId)'
