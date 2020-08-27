@@ -1,83 +1,52 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
-const crypto = require('crypto');
-const marshaller = require('@aws-sdk/eventstream-marshaller');
-const util_utf8_node = require('@aws-sdk/util-utf8-node');
-const v4 = require('./lib/aws-signature-v4');
+const transcribe = require('aws-transcribe');
 
-// our converter between binary event streams messages and JSON
-const eventStreamMarshaller = new marshaller.EventStreamMarshaller(
-  util_utf8_node.toUtf8,
-  util_utf8_node.fromUtf8
-);
-
-// wrap the audio data in a JSON envelope
-const getAudioEventMessage = (buffer) => {
-  return {
-    headers: {
-      ':message-type': {
-        type: 'string',
-        value: 'event',
-      },
-      ':event-type': {
-        type: 'string',
-        value: 'AudioEvent',
-      },
-    },
-    body: buffer,
-  };
-};
-
-// liberally copied from https://github.com/aws-samples/amazon-transcribe-websocket-static/blob/6a0b97f1c667b649c31cd9b550c37795a5c7ce25/lib/main.js#L225
-const region = 'us-east-1';
-const languageCode = 'en-US'; // TODO: can I dynamically switch this?
-const sampleRate = 44100; // only valid for en-US and es-US
-const createPresignedUrl = () => {
-  // get a preauthenticated URL that we can use to establish our WebSocket
-  return v4.createPresignedURL(
-    'GET',
-    `transcribestreaming.${region}.amazonaws.com:8443`,
-    '/stream-transcription-websocket',
-    'transcribe',
-    crypto.createHash('sha256').update('', 'utf8').digest('hex'),
-    {
-      protocol: 'wss',
-      expires: 15,
-      region,
-      query:
-        'language-code=' +
-        languageCode +
-        '&media-encoding=pcm&sample-rate=' +
-        sampleRate,
-    }
-  );
-};
+// read AWS credentials out of .env
+require('dotenv').config();
 
 const app = express();
 
 // initialize a simple http server
 const server = http.createServer(app);
 
-// initialize the WebSocket server instance
-const wss = new WebSocket.Server({ server });
-
 // initialize websocket connection with Amazon Transcribe
-const transcribeSocket = new WebSocket(createPresignedUrl());
-transcribeSocket.binaryType = 'arraybuffer';
+const client = new transcribe.AwsTranscribe();
+const transcribeStream = client
+  .createStreamingClient({
+    region: 'us-west-2',
+    sampleRate: 16000,
+    languageCode: 'en-US',
+  })
+  // enums for returning the event names which the stream will emit
+  .on(transcribe.StreamingClient.EVENTS.OPEN, () =>
+    console.log(`transcribe connection opened`)
+  )
+  .on(transcribe.StreamingClient.EVENTS.ERROR, console.error)
+  .on(transcribe.StreamingClient.EVENTS.CLOSE, () =>
+    console.log(`transcribe connection closed`)
+  )
+  .on(transcribe.StreamingClient.EVENTS.DATA, (data) => {
+    const results = data.Transcript.Results;
 
-wss.on('connection', (ws) => {
-  ws.on('message', (chunk) => {
-    // add the right Transcribe JSON headers and structure to the chunk
-    const audioEventChunk = getAudioEventMessage(Buffer.from(chunk));
-
-    //convert the JSON object + headers into a binary event stream chunk
-    const binary = eventStreamMarshaller.marshall(audioEventChunk);
-
-    if (transcribeSocket.readyState === WebSocket.OPEN) {
-      transcribeSocket.send(binary);
+    if (!results || results.length === 0) {
+      return;
     }
+
+    const result = results[0];
+    const final = !result.IsPartial;
+    const prefix = final ? 'recognized' : 'recognizing';
+    const text = result.Alternatives[0].Transcript;
+    console.log(`${prefix} text: ${text}`);
   });
+
+// initialize the WebSocket server instance
+const audioWss = new WebSocket.Server({ server });
+audioWss.on('connection', (ws) => {
+  console.log(`audio input established`);
+  const audioInputPipe = WebSocket.createWebSocketStream(ws);
+  audioInputPipe.pipe(transcribeStream);
 });
 
 //start our server
