@@ -8,10 +8,8 @@ const transcribeBackend = new aws.elasticbeanstalk.Application(
 );
 const transcribeEnv = new aws.elasticbeanstalk.Environment('transcribeEnv', {
   application: transcribeBackend.name,
-  // https://docs.aws.amazon.com/elasticbeanstalk/latest/platforms/platforms-supported.html
-  // using Docker solution stack, but would need to change to multicontainer
-  // if splitting audio and broadcasting concerns
-  solutionStackName: '64bit Amazon Linux 2 v3.1.0 running Docker',
+  solutionStackName:
+    '64bit Amazon Linux 2018.03 v2.21.0 running Multi-container Docker 19.03.6-ce (Generic)',
 });
 
 // Export important stuff

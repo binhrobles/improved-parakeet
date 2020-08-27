@@ -11,24 +11,23 @@ resources:
 
 stages:
 - stage: Build
-  displayName: Build images
+  displayName: Build/validate images
   jobs:
-    - job: Transcriber
-      displayName: Build Transcriber
-      pool:
-        vmImage: 'ubuntu-latest'
-      steps:
-      - template: ado-templates/docker-build.yml
-        parameters:
-          imageName: 'binhrobles/transcribe-transcriber'
-          dockerfile: '$(Build.SourcesDirectory)/transcriber/Dockerfile'
+    - template: ado-templates/docker-build.yml
+      parameters:
+        name: Transcriber
+        imageName: 'binhrobles/transcribe-transcriber'
+        dockerfile: '$(Build.SourcesDirectory)/transcriber/Dockerfile'
 
-    - job: NGINX
-      displayName: Build NGINX
-      pool:
-        vmImage: 'ubuntu-latest'
-      steps:
-      - template: ado-templates/docker-build.yml
-        parameters:
-          imageName: 'binhrobles/transcribe-nginx'
-          dockerfile: '$(Build.SourcesDirectory)/nginx/Dockerfile'
+    - template: ado-templates/docker-build.yml
+      parameters:
+        name: NGINX
+        imageName: 'binhrobles/transcribe-nginx'
+        dockerfile: '$(Build.SourcesDirectory)/nginx/Dockerfile'
+
+- stage: PublishPersonal
+  displayName: Deploy to personal account
+  jobs:
+    - template: ado-templates/infra-deploy.yml
+      parameters:
+        environment: personal

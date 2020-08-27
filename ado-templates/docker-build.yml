@@ -1,22 +1,28 @@
 ---
 parameters:
+- name: name
+  type: string
 - name: imageName
   type: string
 - name: dockerfile
   type: string
 
-steps:
-- task: Docker@2
-  displayName: Build image
-  inputs:
-    command: build
-    repository: ${{ parameters.imageName }}
-    dockerfile: ${{ parameters.dockerfile }}
+jobs:
+  - job: ${{ parameters.name }}
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      displayName: Build image
+      inputs:
+        command: build
+        repository: ${{ parameters.imageName }}
+        dockerfile: ${{ parameters.dockerfile }}
 
-- task: Docker@2
-  displayName: Push image
-  inputs:
-    command: push
-    containerRegistry: DockerHub
-    repository: ${{ parameters.imageName }}
-    tags: $(Build.BuildId)
+    - task: Docker@2
+      displayName: Push image
+      inputs:
+        command: push
+        containerRegistry: DockerHub
+        repository: ${{ parameters.imageName }}
+        tags: $(Build.BuildId)
