@@ -18,6 +18,9 @@ jobs:
         command: build
         repository: ${{ parameters.imageName }}
         dockerfile: ${{ parameters.dockerfile }}
+        tags: |
+          $(Build.BuildId)
+          latest
 
     - task: Docker@2
       displayName: Push image
