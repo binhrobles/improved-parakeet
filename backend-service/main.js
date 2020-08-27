@@ -43,6 +43,7 @@ const transcribeStream = client
     const text = result.Alternatives[0].Transcript;
     console.log(`${prefix} text: ${text}`);
 
+    // only broadcast out once the final result is achieved
     if (final) {
       audioWss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
