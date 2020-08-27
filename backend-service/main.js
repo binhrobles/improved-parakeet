@@ -11,6 +11,9 @@ const app = express();
 // initialize a simple http server
 const server = http.createServer(app);
 
+// initialize the audio WebSocket listener
+const audioWss = new WebSocket.Server({ server });
+
 // initialize websocket connection with Amazon Transcribe
 const client = new transcribe.AwsTranscribe();
 const transcribeStream = client
@@ -39,10 +42,16 @@ const transcribeStream = client
     const prefix = final ? 'recognized' : 'recognizing';
     const text = result.Alternatives[0].Transcript;
     console.log(`${prefix} text: ${text}`);
+
+    if (final) {
+      audioWss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(text);
+        }
+      });
+    }
   });
 
-// initialize the WebSocket server instance
-const audioWss = new WebSocket.Server({ server });
 audioWss.on('connection', (ws) => {
   console.log(`audio input established`);
   const audioInputPipe = WebSocket.createWebSocketStream(ws);
