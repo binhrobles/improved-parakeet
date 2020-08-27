@@ -20,8 +20,8 @@ stages:
       steps:
       - template: ado-templates/docker-build.yml
         parameters:
-          pImageName: 'binhrobles/transcribe-transcriber'
-          pDockerfile: '$(Build.SourcesDirectory)/transcriber/Dockerfile'
+          imageName: 'binhrobles/transcribe-transcriber'
+          dockerfile: '$(Build.SourcesDirectory)/transcriber/Dockerfile'
 
     - job: NGINX
       displayName: Build NGINX
@@ -30,5 +30,5 @@ stages:
       steps:
       - template: ado-templates/docker-build.yml
         parameters:
-          pImageName: 'binhrobles/transcribe-nginx'
-          pDockerfile: '$(Build.SourcesDirectory)/nginx/Dockerfile'
+          imageName: 'binhrobles/transcribe-nginx'
+          dockerfile: '$(Build.SourcesDirectory)/nginx/Dockerfile'

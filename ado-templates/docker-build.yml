@@ -1,8 +1,8 @@
 ---
 parameters:
-- name: pImageName
+- name: imageName
   type: string
-- name: pDockerfile
+- name: dockerfile
   type: string
 
 steps:
@@ -10,13 +10,13 @@ steps:
   displayName: Build image
   inputs:
     command: build
-    repository: ${{ pImageName }}
-    dockerfile: ${{ pDockerfile }}
+    repository: ${{ parameters.imageName }}
+    dockerfile: ${{ parameters.dockerfile }}
 
 - task: Docker@2
   displayName: Push image
   inputs:
     command: push
     containerRegistry: DockerHub
-    repository: ${{ pImageName }}
+    repository: ${{ parameters.imageName }}
     tags: $(Build.BuildId)
