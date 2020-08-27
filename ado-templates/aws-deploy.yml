@@ -1,0 +1,77 @@
+# deploys the stack into an AWS account using pulumi and EB
+---
+parameters:
+- name: environment
+  type: string
+
+jobs:
+  - job: Infrastructure
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - task: Cache@2
+        displayName: Cache Yarn packages
+        inputs:
+          key: 'pulumi | yarn | "$(Agent.OS)" | yarn.lock'
+          path: $(YARN_CACHE_FOLDER)
+
+      - script: yarn
+        displayName: 'install pulumi dependencies'
+        workingDirectory: 'infra/'
+
+        # runs `pulumi preview` if PR or manual build invoked
+      - task: Pulumi@1
+        condition: or(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.Reason'], 'Manual'))
+        inputs:
+          command: 'preview'
+          cwd: 'infra/'
+          stack: 'binhrobles/transcribe-backend/${{ parameters.environment }}'
+
+        # runs `pulumi up --yes` if triggered by Git push
+      - task: Pulumi@1
+        condition: or(eq(variables['Build.Reason'], 'IndividualCI'), eq(variables['Build.Reason'], 'BatchedCI'))
+        inputs:
+          command: 'up'
+          cwd: 'infra/'
+          stack: 'binhrobles/transcribe-backend/${{ parameters.environment }}'
+          args: '--yes'
+
+        # TODO: emit the endpoint somewhere
+      - script: |
+          echo "##vso[task.setvariable variable=endpoint;isOutput=true]$(pulumi stack output endpoint)"
+          echo "##vso[task.setvariable variable=applicationName;isOutput=true]$(pulumi stack output applicationName)"
+          echo "##vso[task.setvariable variable=environmentName;isOutput=true]$(pulumi stack output environmentName)"
+        displayName: 'Set stack outputs as variables'
+        workingDirectory: 'infra/'
+        name: 'pulumi'
+
+  - job: EB Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    # map in the output from previous job
+    # remember, expressions require single quotes
+    variables:
+      applicationName: $[ dependencies.Infrastructure.outputs['pulumi.applicationName'] ]
+      environmentName: $[ dependencies.Infrastructure.outputs['pulumi.environmentName'] ]
+
+    steps:
+        # create source bundle for EB, which is really just a declaration of where
+        # the Docker images to be used are
+      - task: ArchiveFiles@2
+        inputs:
+          rootFolderOrFile: Dockerrun.aws.json
+          archiveType: zip
+          archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+          replaceExistingArchive: true
+
+      - task: AmazonWebServices.aws-vsts-tools.S3Upload.S3Upload@1
+        displayName: 'S3 Upload: source bundle to $(aws.accountId)'
+        inputs:
+          bucketName: 'elasticbeanstalk-$(aws.region)-$(aws.accountId)' # use default eb bucket
+          sourceFolder: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+          targetFolder: $(applicationName)
+          regionName: $(aws.region)
+        env:  # explicitly map in secret env vars
+          AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+          AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)

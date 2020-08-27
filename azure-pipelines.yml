@@ -28,8 +28,8 @@ stages:
 - stage: PublishPersonal
   displayName: Deploy to personal account
   variables:
-    - group: personal-secrets   # imports pulumi.access.token, aws creds for personal aws account
+    - group: personal-aws-info   # imports pulumi.access.token, aws creds, accountId for personal aws account
   jobs:
-    - template: ado-templates/infra-deploy.yml
+    - template: ado-templates/aws-deploy.yml
       parameters:
         environment: personal
