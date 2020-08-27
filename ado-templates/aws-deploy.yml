@@ -89,4 +89,4 @@ jobs:
           applicationName: $(applicationName)
           environmentName: $(environmentName)
           deploymentBundleBucket: $(bucketName)
-          targetFolder: '$(applicationName)/$(archiveName)'
+          deploymentBundleKey: '$(applicationName)/$(archiveName)'
