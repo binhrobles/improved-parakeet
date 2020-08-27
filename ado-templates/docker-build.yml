@@ -25,6 +25,6 @@ jobs:
         command: push
         containerRegistry: DockerHub
         repository: ${{ parameters.imageName }}
-        tags:
-          - $(Build.BuildId)
-          - latest
+        tags: |
+          $(Build.BuildId)
+          latest
