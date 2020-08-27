@@ -45,7 +45,7 @@ jobs:
         workingDirectory: 'infra/'
         name: 'pulumi'
 
-  - job: EB Deploy
+  - job: EBDeploy
     pool:
       vmImage: 'ubuntu-latest'
 
