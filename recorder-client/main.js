@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const recorder = require('node-record-lpcm16');
 
 // set up websocket connection
-const ws = new WebSocket('ws://localhost:8000');
+const ws = new WebSocket('ws://localhost:80');
 ws.binaryType = 'arraybuffer';
 const duplex = WebSocket.createWebSocketStream(ws);
 
