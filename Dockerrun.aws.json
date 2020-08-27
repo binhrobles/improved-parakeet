@@ -1,0 +1,25 @@
+{
+  "AWSEBDockerrunVersion": 2,
+  "containerDefinitions": [
+    {
+      "name": "transcriber",
+      "image": "binhrobles/transcribe-transcriber",
+      "hostname": "transcriber",
+      "memory": 128,
+      "essential": true
+    },
+    {
+      "name": "nginx",
+      "image": "binhrobles/transcribe-nginx",
+      "essential": true,
+      "memory": 128,
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "containerPort": 80
+        }
+      ],
+      "links": ["transcriber"]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 ---
 version: '3.8'
 services:
-  backend:
-    build: ./backend-service
+  transcriber:
+    build: ./transcriber
     ports:
       - '8000:8000'

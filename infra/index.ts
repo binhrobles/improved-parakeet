@@ -1,16 +1,18 @@
-import * as pulumi from "@pulumi/pulumi";
-import * as aws from "@pulumi/aws";
-import * as awsx from "@pulumi/awsx";
+import * as pulumi from '@pulumi/pulumi';
+import * as aws from '@pulumi/aws';
 
-// Create an AWS resource (S3 Bucket)
-const audioBucket = new aws.s3.Bucket("audio-input");
-const outputBucket = new aws.s3.Bucket("text-output");
-
-// Trigger a Lambda function when something is added.
-audioBucket.onObjectCreated("onNewVideo", (bucketArgs) => {
-  console.log(`*** New Item in Bucket`);
+// scaffold eb environment
+const transcribeBackend = new aws.elasticbeanstalk.Application(
+  'transcribeBackend',
+  { description: 'Backend services for transcribing' }
+);
+const transcribeEnv = new aws.elasticbeanstalk.Environment('transcribeEnv', {
+  application: transcribeBackend.name,
+  // https://docs.aws.amazon.com/elasticbeanstalk/latest/platforms/platforms-supported.html
+  // using Docker solution stack, but would need to change to multicontainer
+  // if splitting audio and broadcasting concerns
+  solutionStackName: '64bit Amazon Linux 2 v3.1.0 running Docker',
 });
 
-// Export the name of the bucket
-export const audioBucketName = audioBucket.id;
-export const textBucketName = outputBucket.id;
+// Export important stuff
+export const endpoint = transcribeEnv.endpointUrl;
