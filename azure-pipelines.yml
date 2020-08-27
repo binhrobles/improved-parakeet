@@ -15,7 +15,6 @@ stages:
   jobs:
     - job: Transcriber
       displayName: Build Transcriber
-      variables:
       pool:
         vmImage: 'ubuntu-latest'
       steps:
@@ -26,7 +25,6 @@ stages:
 
     - job: NGINX
       displayName: Build NGINX
-      variables:
       pool:
         vmImage: 'ubuntu-latest'
       steps:
