@@ -16,6 +16,7 @@ jobs:
       displayName: Build and Push Image
       inputs:
         command: buildAndPush
+        containerRegistry: DockerHub
         repository: ${{ parameters.imageName }}
         dockerfile: ${{ parameters.dockerfile }}
         tags: |
