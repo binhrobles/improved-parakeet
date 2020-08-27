@@ -59,4 +59,5 @@ const transcribeEnv = new aws.elasticbeanstalk.Environment('transcribeEnv', {
 
 // Export important stuff
 export const endpoint = transcribeEnv.endpointUrl;
-// TODO: app name, env name, s3 bucket (?), for deploying
+export const applicationName = transcribeBackend.name;
+export const environmentName = transcribeEnv.name;
