@@ -13,24 +13,24 @@ stages:
 - stage: Build
   displayName: Build images
   jobs:
-  - job: Transcriber
-    displayName: Build Transcriber
-    variables:
-      imageName: 'binhrobles/transcriber-transcribe'
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-    - task: Docker@2
-      displayName: Build image
-      inputs:
-        repository: $(imageName)
-        command: build
-        dockerfile: '$(Build.SourcesDirectory)/transcriber/Dockerfile'
+    - job: Transcriber
+      displayName: Build Transcriber
+      variables:
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+      - template: ado-templates/docker-build.yml
+        parameters:
+          pImageName: 'binhrobles/transcribe-transcriber'
+          pDockerfile: '$(Build.SourcesDirectory)/transcriber/Dockerfile'
 
-    - task: Docker@2
-      displayName: Push image
-      inputs:
-        containerRegistry: DockerHub
-        repository: '$(imageName)'
-        command: 'push'
-        tags: '$(Build.BuildId)'
+    - job: NGINX
+      displayName: Build NGINX
+      variables:
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+      - template: ado-templates/docker-build.yml
+        parameters:
+          pImageName: 'binhrobles/transcribe-nginx'
+          pDockerfile: '$(Build.SourcesDirectory)/nginx/Dockerfile'
