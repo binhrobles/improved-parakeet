@@ -59,6 +59,7 @@ jobs:
       applicationName: $[ dependencies.Infrastructure.outputs['pulumi.applicationName'] ]
       environmentName: $[ dependencies.Infrastructure.outputs['pulumi.environmentName'] ]
       archiveName: $(Build.BuildId).zip
+      bucketName: 'elasticbeanstalk-$(aws.region)-$(aws.accountId)' # use default eb bucket
 
     steps:
         # create source bundle for EB, which is really just a declaration of where
@@ -73,10 +74,19 @@ jobs:
       - task: AmazonWebServices.aws-vsts-tools.S3Upload.S3Upload@1
         displayName: 'S3 Upload: source bundle to $(aws.accountId)'
         inputs:
-          bucketName: 'elasticbeanstalk-$(aws.region)-$(aws.accountId)' # use default eb bucket
+          bucketName: $(bucketName)
           globExpressions: $(archiveName)
           targetFolder: $(applicationName)
           regionName: $(aws.region)
         env:  # explicitly map in secret env vars
           AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
           AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+      - task: BeanstalkDeployApplication@1
+        inputs:
+          applicationType: s3
+          regionName: $(aws.region)
+          applicationName: $(applicationName)
+          environmentName: $(environmentName)
+          deploymentBundleBucket: $(bucketName)
+          deploymentBundleKey: $(archiveName)
