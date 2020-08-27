@@ -1,7 +1,8 @@
-# Docker
-# Build a Docker image
-# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
-
+# TODO:
+#   - infra deploy
+#   - separate docker build/push template
+#   - caching intermediate image builds
+---
 trigger:
 - master
 
@@ -15,7 +16,7 @@ stages:
   - job: Transcriber
     displayName: Build Transcriber
     variables:
-      imageName: 'transcriber-transcribe'
+      imageName: 'binhrobles/transcriber-transcribe'
     pool:
       vmImage: 'ubuntu-latest'
     steps:
