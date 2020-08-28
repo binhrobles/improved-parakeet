@@ -9,7 +9,7 @@
   let transcribed = [];
 
   const handleConnect = () => {
-    const ws = new WebSocket("ws://localhost:8000")
+    const ws = new WebSocket(`ws://${process.env.ENDPOINT || 'localhost:8000'}`)
     user.ws = ws;
 
     ws.onopen = () => {

@@ -1,6 +1,4 @@
 # TODO:
-#   - infra deploy
-#   - separate docker build/push template
 #   - caching intermediate image builds
 ---
 trigger:
