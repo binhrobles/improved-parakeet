@@ -75,12 +75,23 @@ const initiateTranscription = async ({
           }
 
           if (client.readyState === WebSocket.OPEN) {
-            client.send(text);
+            client.send(
+              JSON.stringify({
+                event: 'text',
+                languageCode: 'en',
+                value: text,
+                isPartial: result.IsPartial,
+              })
+            );
             if (translated)
               client.send(
-                `${
-                  listenerConfig[client.id].languageCode
-                }-${latency}ms: ${translated}`
+                JSON.stringify({
+                  event: 'text',
+                  languageCode: listenerConfig[client.id].languageCode,
+                  value: translated,
+                  isPartial: result.IsPartial,
+                  latency,
+                })
               );
           }
         });
@@ -104,6 +115,7 @@ audioWss.on('connection', (ws) => {
   // initialize connection config
   ws.id = shortid();
   state[ws.id] = {};
+  console.log(`client ${ws.id} connected`);
 
   ws.on('message', async (data) => {
     // first try to parse the data, to see if it's a user command
@@ -135,7 +147,6 @@ audioWss.on('connection', (ws) => {
     // accept language change
     if (message.event === 'change-language') {
       state[ws.id].languageCode = message.value;
-      ws.send(`Translating to ${message.value}`);
       return;
     }
   });
