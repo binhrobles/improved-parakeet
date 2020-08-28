@@ -50,6 +50,27 @@ new aws.iam.RolePolicyAttachment('transcribeAttach', {
   role: ebRole.name,
 });
 
+// allow eb instances to initiate hit translate api
+const translateAccessPolicy = new aws.iam.Policy('translateAccessPolicy', {
+  policy: `{
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Sid": "translateStreaming",
+      "Effect": "Allow",
+      "Action": [
+        "translate:TranslateText",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics"
+      ],
+      "Resource": "*"
+    }]
+  }`,
+});
+new aws.iam.RolePolicyAttachment('translateAttach', {
+  policyArn: translateAccessPolicy.arn,
+  role: ebRole.name,
+});
+
 // scaffold eb environment
 const transcribeBackend = new aws.elasticbeanstalk.Application(
   'transcribeBackend',

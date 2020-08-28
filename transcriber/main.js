@@ -2,21 +2,26 @@ const AWS = require('aws-sdk');
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
+const shortid = require('shortid');
 const transcribe = require('aws-transcribe');
 
-const retrieveCurrentAwsCreds = async () => {
-  const chain = new AWS.CredentialProviderChain();
-  return await chain.resolvePromise();
-};
+const REGION = process.env.REGION || 'us-west-2';
 
-const initiateTranscription = async ({ publishStream, speaker }) => {
-  const creds = await retrieveCurrentAwsCreds();
+const initiateTranscription = async ({
+  publishStream,
+  speaker,
+  listenerConfig,
+}) => {
+  // prepare aws service connections
+  AWS.config.update({ region: REGION });
+  const creds = await new AWS.CredentialProviderChain().resolvePromise();
+  const transcribeClient = new transcribe.AwsTranscribe(creds);
+  const translateClient = new AWS.Translate(); // sdk client, so auto uses CredentialProviderChain
 
   // initialize websocket connection with Amazon Transcribe
-  const client = new transcribe.AwsTranscribe(creds);
-  const transcribeStream = client
+  const transcribeStream = transcribeClient
     .createStreamingClient({
-      region: 'us-west-2', // TODO: not this
+      region: REGION,
       sampleRate: 16000,
       languageCode: 'en-US',
     })
@@ -46,9 +51,32 @@ const initiateTranscription = async ({ publishStream, speaker }) => {
       // currently using a global audioWss object
       // but ideally this step would just publish to a pubsub service and be done
       if (final) {
-        publishStream.clients.forEach((client) => {
+        publishStream.clients.forEach(async (client) => {
+          // if they want to translate, pipe through translate
+          // could be improved by adding a cache for entries, calling translate ideally once
+          let translated;
+          let latency;
+          if (listenerConfig[client.id].languageCode) {
+            try {
+              const start = new Date();
+              const response = await translateClient
+                .translateText({
+                  SourceLanguageCode: 'en',
+                  TargetLanguageCode: listenerConfig[client.id].languageCode,
+                  Text: text,
+                })
+                .promise();
+
+              translated = response.TranslatedText;
+              latency = new Date() - start;
+            } catch (e) {
+              console.error(e);
+            }
+          }
+
           if (client.readyState === WebSocket.OPEN) {
             client.send(text);
+            if (translated) client.send(`${latency}: ${translated}`);
           }
         });
       }
@@ -64,19 +92,46 @@ const server = http.createServer(app);
 // initialize the audio WebSocket listener
 const audioWss = new WebSocket.Server({ server });
 
+// initialize connection state that should live externally
+const state = {};
+
 audioWss.on('connection', (ws) => {
+  // initialize connection config
+  ws.id = shortid();
+  state[ws.id] = {};
+
   ws.on('message', async (data) => {
-    if (data.toString() === 'audio-client') {
+    // first try to parse the data, to see if it's a user command
+    // how could this be rearchitected to avoid this?
+    let message;
+    try {
+      message = JSON.parse(data.toString());
+    } catch (e) {
+      return;
+    }
+
+    // accept a new audio client, and start a transcription stream
+    if (message.event === 'start' && message.value === 'audio-client') {
       console.log('new audio client');
 
       const transcribeStream = await initiateTranscription({
         publishStream: audioWss,
         speaker: ws,
+        listenerConfig: state,
       });
       const audioInputPipe = WebSocket.createWebSocketStream(ws);
 
       console.log('piping audio...');
       audioInputPipe.pipe(transcribeStream);
+
+      return;
+    }
+
+    // accept language change
+    if (message.event === 'change-language') {
+      state[ws.id].languageCode = message.value;
+      ws.send(`Translating to ${message.value}`);
+      return;
     }
   });
 });

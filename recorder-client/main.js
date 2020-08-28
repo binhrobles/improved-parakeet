@@ -1,13 +1,20 @@
+// invoke like:
+// yarn start transcribeenv-7d0e32d.eba-egz27rfr.us-west-2.elasticbeanstalk.com:80
 const WebSocket = require('ws');
 const recorder = require('node-record-lpcm16');
 
 // set up websocket connection
-const ws = new WebSocket('ws://localhost:8000');
+const ws = new WebSocket(
+  process.argv[2] ? `ws://${process.argv[2]}` : 'ws://localhost:8000'
+);
 ws.binaryType = 'arraybuffer';
 const duplex = WebSocket.createWebSocketStream(ws);
 
 // notify server that we're speaking
-duplex.write('audio-client', 'utf-8');
+duplex.write(
+  JSON.stringify({ event: 'start', value: 'audio-client' }),
+  'utf-8'
+);
 
 // create microphone instance
 const recordStream = recorder
