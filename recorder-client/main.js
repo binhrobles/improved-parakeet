@@ -6,6 +6,9 @@ const ws = new WebSocket('ws://localhost:8000');
 ws.binaryType = 'arraybuffer';
 const duplex = WebSocket.createWebSocketStream(ws);
 
+// notify server that we're speaking
+duplex.write('audio-client', 'utf-8');
+
 // create microphone instance
 const recordStream = recorder
   .record({

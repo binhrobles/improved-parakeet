@@ -64,17 +64,21 @@ const server = http.createServer(app);
 // initialize the audio WebSocket listener
 const audioWss = new WebSocket.Server({ server });
 
-audioWss.on('connection', async (ws) => {
-  console.log('audio input established');
+audioWss.on('connection', (ws) => {
+  ws.on('message', async (data) => {
+    if (data.toString() === 'audio-client') {
+      console.log('new audio client');
 
-  const transcribeStream = await initiateTranscription({
-    publishStream: audioWss,
-    speaker: ws,
+      const transcribeStream = await initiateTranscription({
+        publishStream: audioWss,
+        speaker: ws,
+      });
+      const audioInputPipe = WebSocket.createWebSocketStream(ws);
+
+      console.log('piping audio...');
+      audioInputPipe.pipe(transcribeStream);
+    }
   });
-  const audioInputPipe = WebSocket.createWebSocketStream(ws);
-
-  console.log('piping audio...');
-  audioInputPipe.pipe(transcribeStream);
 });
 
 //start our server
