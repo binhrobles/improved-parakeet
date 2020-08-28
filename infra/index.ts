@@ -61,11 +61,6 @@ const transcribeEnv = new aws.elasticbeanstalk.Environment('transcribeEnv', {
       name: 'ListenerProtocol',
       value: 'TCP',
     },
-    {
-      namespace: 'aws:elb:policies',
-      name: 'Stickiness Policy',
-      value: 'true',
-    },
   ],
 });
 
