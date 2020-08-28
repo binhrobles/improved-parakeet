@@ -5,7 +5,7 @@ parameters:
   type: string
 
 jobs:
-  - job: Infrastructure
+  - job: ServicesInfrastructure
     variables:
       YARN_CACHE_FOLDER: $(Pipeline.Workspace)/.yarn
     pool:
@@ -38,7 +38,6 @@ jobs:
           stack: 'binhrobles/transcribe-backend/${{ parameters.environment }}'
           args: '--yes'
 
-        # TODO: emit the endpoint somewhere
       - script: |
           echo "##vso[task.setvariable variable=endpoint;isOutput=true]$(pulumi stack output endpoint)"
           echo "##vso[task.setvariable variable=applicationName;isOutput=true]$(pulumi stack output applicationName)"
@@ -50,16 +49,16 @@ jobs:
   - job: EBDeploy
     name: Elastic Beanstalk Backend Deploy
     dependsOn:
-      - Infrastructure
+      - ServicesInfrastructure
     pool:
       vmImage: 'ubuntu-latest'
 
     # map in the output from previous job
     # remember, expressions require single quotes
     variables:
-      applicationName: $[ dependencies.Infrastructure.outputs['pulumi.applicationName'] ]
-      environmentName: $[ dependencies.Infrastructure.outputs['pulumi.environmentName'] ]
-      archiveName: $(Build.BuildId).zip
+      applicationName: $[ dependencies.ServicesInfrastructure.outputs['pulumi.applicationName'] ]
+      environmentName: $[ dependencies.ServicesInfrastructure.outputs['pulumi.environmentName'] ]
+      archiveName: $(Build.SourceVersion).zip
       bucketName: 'elasticbeanstalk-$(aws.region)-$(aws.accountId)' # use default eb bucket
 
     steps:

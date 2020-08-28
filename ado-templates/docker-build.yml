@@ -20,5 +20,5 @@ jobs:
         repository: ${{ parameters.imageName }}
         dockerfile: ${{ parameters.dockerfile }}
         tags: |
-          $(Build.BuildId)
+          $(Build.SourceVersion)
           latest

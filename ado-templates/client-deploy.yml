@@ -1,0 +1,88 @@
+# reusable template for artifacting and deploying a Svelte app
+---
+parameters:
+- name: environment
+  type: string
+- name: artifactName
+  type: string
+
+jobs:
+  - job: FrontEndInfrastructure
+    steps:
+    - task: Cache@2
+      inputs:
+        key: 'pulumi | yarn | "$(Agent.OS)" | yarn.lock'
+        path: $(YARN_CACHE_FOLDER)
+      displayName: Cache Yarn packages
+
+    - script: yarn
+      workingDirectory: 'frontend-infra/'
+      displayName: 'install pulumi dependencies'
+
+      # runs `pulumi preview` if PR or manual build invoked
+    - task: Pulumi@1
+      condition: or(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.Reason'], 'Manual'))
+      inputs:
+        command: 'preview'
+        cwd: 'frontend-infra/'
+        stack: 'binhrobles/transcribe-frontend/${{ parameters.environment }}'
+
+      # runs `pulumi up --yes` if triggered by Git push
+    - task: Pulumi@1
+      condition: or(eq(variables['Build.Reason'], 'IndividualCI'), eq(variables['Build.Reason'], 'BatchedCI'))
+      inputs:
+        command: 'up'
+        cwd: 'frontend-infra/'
+        stack: 'binhrobles/transcribe-frontend/${{ parameters.environment }}'
+        args: '--yes'
+
+    - script: |
+        echo "##vso[task.setvariable variable=bucketName;isOutput=true]$(pulumi stack output bucketName)"
+      displayName: 'Set stack outputs as variables'
+      workingDirectory: 'frontend-infra/'
+      name: 'pulumi'
+
+  - job: Artifact
+    dependsOn:
+      - ServicesInfrastructure # because we need the eb endpoint at build time
+    variables:
+      endpoint: $[ dependencies.ServicesInfrastructure.outputs['pulumi.endpoint'] ]
+    steps:
+    - task: Cache@2
+      inputs:
+        key: 'client | yarn | "$(Agent.OS)" | yarn.lock'
+        path: $(YARN_CACHE_FOLDER)
+      displayName: Cache Yarn packages
+
+    - script: yarn
+      displayName: 'Install dependencies'
+
+    - script: 'env ENDPOINT=$(endpoint) yarn build'
+      displayName: 'Generate static resources'
+
+    - publish: dist
+      artifact: ${{ parameters.artifactName }}
+
+    # copies static files to s3 bucket after successful building and infra generation
+    # only when triggered by Git push
+  - job: ClientDeploy
+    condition: or(eq(variables['Build.Reason'], 'IndividualCI'), eq(variables['Build.Reason'], 'BatchedCI'))
+    dependsOn:
+      - Artifact
+      - FrontEndInfrastructure
+    variables:
+      bucketName: $[ dependencies.FrontEndInfrastructure.outputs['pulumi.bucketName'] ]
+
+    steps:
+    - download: current # specifies that artifact was published during this run
+      artifact: ${{ parameters.artifactName }}
+
+    - task: AmazonWebServices.aws-vsts-tools.S3Upload.S3Upload@1
+      displayName: 'S3 Upload: ${{ parameters.artifactName }} to $(bucketName)'
+      inputs:
+        regionName: 'us-west-2'
+        bucketName: $(bucketName)
+        sourceFolder: '$(Pipeline.Workspace)/${{ parameters.artifactName }}'
+      env:  # explicitly map in secret env vars
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)

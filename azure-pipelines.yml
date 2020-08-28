@@ -28,6 +28,11 @@ stages:
   variables:
     - group: personal-aws-info   # imports pulumi.access.token, aws creds, accountId for personal aws account
   jobs:
-    - template: ado-templates/aws-deploy.yml
+    - template: ado-templates/services-deploy.yml
       parameters:
         environment: personal
+
+    - template: pipeline-templates/client-deploy.template.yml
+      parameters:
+        environment: personal
+        artifactName: 'personal-$(Build.SourceVersion)' # append the git hash to the artifact name

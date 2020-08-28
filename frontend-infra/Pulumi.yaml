@@ -1,0 +1,3 @@
+name: transcribe-frontend
+runtime: nodejs
+description: Frontend infra for hosting static site
