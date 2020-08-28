@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const recorder = require('node-record-lpcm16');
 
 // set up websocket connection
-const ws = new WebSocket('ws://localhost:80');
+const ws = new WebSocket('ws://localhost:8000');
 ws.binaryType = 'arraybuffer';
 const duplex = WebSocket.createWebSocketStream(ws);
 
@@ -18,6 +18,10 @@ const recordStream = recorder
 
 recordStream.on('error', console.error);
 recordStream.pipe(duplex); // send everything from recorder into backend connection
+
+duplex.on('data', (data) => {
+  console.log(data.toString());
+});
 
 process.on('SIGINT', () => {
   console.log('Goodbye');

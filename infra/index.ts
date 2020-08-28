@@ -38,6 +38,8 @@ const multiContainerAttach = new aws.iam.RolePolicyAttachment(
   }
 );
 
+// TODO: attach transcribestream access
+
 // scaffold eb environment
 const transcribeBackend = new aws.elasticbeanstalk.Application(
   'transcribeBackend',
@@ -53,6 +55,16 @@ const transcribeEnv = new aws.elasticbeanstalk.Environment('transcribeEnv', {
       namespace: 'aws:autoscaling:launchconfiguration',
       name: 'IamInstanceProfile',
       value: ebInstanceProfile.name,
+    },
+    {
+      namespace: 'aws:elb:listener',
+      name: 'ListenerProtocol',
+      value: 'TCP',
+    },
+    {
+      namespace: 'aws:elb:policies',
+      name: 'Stickiness Policy',
+      value: 'true',
     },
   ],
 });
