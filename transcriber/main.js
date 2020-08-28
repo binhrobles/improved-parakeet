@@ -76,7 +76,12 @@ const initiateTranscription = async ({
 
           if (client.readyState === WebSocket.OPEN) {
             client.send(text);
-            if (translated) client.send(`${latency}: ${translated}`);
+            if (translated)
+              client.send(
+                `${
+                  listenerConfig[client.id].languageCode
+                }-${latency}ms: ${translated}`
+              );
           }
         });
       }
