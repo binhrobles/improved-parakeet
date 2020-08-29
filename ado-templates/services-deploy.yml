@@ -47,7 +47,6 @@ jobs:
         name: 'pulumi'
 
   - job: EBDeploy
-    name: Elastic Beanstalk Backend Deploy
     dependsOn:
       - ServicesInfrastructure
     pool:
