@@ -7,6 +7,9 @@ trigger:
 resources:
 - repo: self
 
+variables:
+  YARN_CACHE_FOLDER: $(Pipeline.Workspace)/.yarn
+
 stages:
 - stage: Build
   displayName: Build/validate images

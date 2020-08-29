@@ -6,8 +6,6 @@ parameters:
 
 jobs:
   - job: ServicesInfrastructure
-    variables:
-      YARN_CACHE_FOLDER: $(Pipeline.Workspace)/.yarn
     pool:
       vmImage: 'ubuntu-latest'
     steps:
