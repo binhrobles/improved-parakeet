@@ -14,7 +14,7 @@ jobs:
       - task: Cache@2
         displayName: Cache Yarn packages
         inputs:
-          key: 'pulumi | yarn | "$(Agent.OS)" | yarn.lock'
+          key: 'pulumi | services | yarn | "$(Agent.OS)" | yarn.lock'
           path: $(YARN_CACHE_FOLDER)
 
       - script: yarn

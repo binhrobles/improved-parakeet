@@ -55,7 +55,7 @@
       Connect!
     </button>
   {:else}
-    <select bind:value={user.language} on:change={handleLanguageChange}>
+    <select bind:value={user.language} on:blur={handleLanguageChange}>
     	{#each languages as {code, name} }
         <option value={code}>{name}</option>
       {/each}
