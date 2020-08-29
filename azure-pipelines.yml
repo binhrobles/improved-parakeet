@@ -32,7 +32,7 @@ stages:
       parameters:
         environment: personal
 
-    - template: ado-templates/client-deploy.template.yml
+    - template: ado-templates/client-deploy.yml
       parameters:
         environment: personal
         artifactName: 'personal-$(Build.SourceVersion)' # append the git hash to the artifact name
