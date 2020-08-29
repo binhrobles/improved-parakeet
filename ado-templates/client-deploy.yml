@@ -82,7 +82,7 @@ jobs:
     - task: AmazonWebServices.aws-vsts-tools.S3Upload.S3Upload@1
       displayName: 'S3 Upload: ${{ parameters.artifactName }} to $(bucketName)'
       inputs:
-        regionName: 'us-west-2'
+        regionName: $(aws.region)
         bucketName: $(bucketName)
         sourceFolder: '$(Pipeline.Workspace)/${{ parameters.artifactName }}'
       env:  # explicitly map in secret env vars

@@ -1,5 +1,7 @@
 # TODO:
-#   - caching intermediate image builds
+#  - only create new images when source has changed
+#  - only create eb deployment when images have changed
+#  - caching intermediate image builds
 ---
 trigger:
 - master
