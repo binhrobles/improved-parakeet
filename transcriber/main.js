@@ -6,6 +6,7 @@ const shortid = require('shortid');
 const transcribe = require('aws-transcribe');
 
 const REGION = process.env.REGION || 'us-west-2';
+let id = 1000;
 
 const initiateTranscription = async ({
   publishStream,
@@ -51,6 +52,7 @@ const initiateTranscription = async ({
       // currently using a global audioWss object
       // but ideally this step would just publish to a pubsub service and be done
       if (final) {
+        id += 1;
         publishStream.clients.forEach(async (client) => {
           // if they want to translate, pipe through translate
           // could be improved by adding a cache for entries, calling translate ideally once
@@ -77,15 +79,17 @@ const initiateTranscription = async ({
           if (client.readyState === WebSocket.OPEN) {
             client.send(
               JSON.stringify({
+                id,
                 event: 'text',
                 languageCode: 'en',
                 value: text,
                 isPartial: result.IsPartial,
               })
             );
-            if (translated)
+            if (translated) {
               client.send(
                 JSON.stringify({
+                  id,
                   event: 'text',
                   languageCode: listenerConfig[client.id].languageCode,
                   value: translated,
@@ -93,6 +97,7 @@ const initiateTranscription = async ({
                   latency,
                 })
               );
+            }
           }
         });
       }

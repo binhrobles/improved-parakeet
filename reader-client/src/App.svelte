@@ -62,14 +62,28 @@
     </select>
 
     <h3>Transcription</h3>
-    <div id="transcriptionBox">
-      <ul>
-        {#each transcribed as {languageCode, value, latency} }
-          <li>
-            <b>{languageCode}</b>{#if latency }({latency}ms){/if} > {value}
-          </li>
-        {/each}
-      </ul>
+    <div id="transcriptionContainer">
+      <div class="transcriptionBox">
+        <ul>
+          {#each transcribed as {id, languageCode, value} }
+            <li>
+              {#if languageCode === 'en'}<b>{id}</b> > {value}{/if}
+            </li>
+          {/each}
+        </ul>
+      </div>
+
+      {#if user.language }
+        <div class="transcriptionBox">
+          <ul>
+            {#each transcribed as {id, languageCode, value, latency} }
+              <li>
+                {#if languageCode !== 'en' }<b>{id}</b> ({latency}ms) > {value}{/if}
+              </li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
     </div>
   {/if}
 </main>
@@ -89,13 +103,18 @@
 		font-weight: 100;
 	}
 
-  #transcriptionBox {
+  #transcriptionContainer {
+    display: flex;
+    align-content: center;
+  }
+
+  .transcriptionBox {
     border: 1px solid #ccc;
     border-radius: 16px;
 
     /* center this div */
     margin: auto;
-    width: 75%;
+    width: 45vw;
     padding: 10px;
 
     text-align: left;
@@ -109,7 +128,7 @@
     flex-direction: column-reverse;
   }
 
-  #transcriptionBox > ul {
+  .transcriptionBox > ul {
     list-style: none;
   }
 
