@@ -6,7 +6,8 @@
     language: null,
     ws: null,
   };
-  let transcribed = [];
+  let original = [];
+  let translated = [];
 
   const handleConnect = () => {
     const ws = new WebSocket(`ws://${process.env.ENDPOINT || 'localhost:8000'}`)
@@ -28,11 +29,13 @@
       } catch (e) {
         console.error('Parsing error');
       }
-      if (message.event === 'text') {
-        transcribed = [
-          ...transcribed,
-          message,
-        ];
+
+      if (message.event === 'original') {
+        original = { ...original };
+        original[message.id] = message;
+      } else if (message.event === 'translated') {
+        translated = { ...translated };
+        translated[message.id] = message;
       }
     }
   }
@@ -65,9 +68,9 @@
     <div id="transcriptionContainer">
       <div class="transcriptionBox">
         <ul>
-          {#each transcribed as {id, languageCode, value} }
+          {#each Object.keys(original) as id}
             <li>
-              {#if languageCode === 'en'}<b>{id}</b> > {value}{/if}
+              <b>{id}</b> > {original[id].value}
             </li>
           {/each}
         </ul>
@@ -76,9 +79,9 @@
       {#if user.language }
         <div class="transcriptionBox">
           <ul>
-            {#each transcribed as {id, languageCode, value, latency} }
+            {#each Object.keys(translated) as id}
               <li>
-                {#if languageCode !== 'en' }<b>{id}</b> ({latency}ms) > {value}{/if}
+                <b>{id}</b> {translated[id].languageCode} ({translated[id].latency}ms) > {translated[id].value}
               </li>
             {/each}
           </ul>

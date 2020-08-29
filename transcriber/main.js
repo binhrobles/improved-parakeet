@@ -51,56 +51,55 @@ const initiateTranscription = async ({
       // only broadcast out once the final result is achieved
       // currently using a global audioWss object
       // but ideally this step would just publish to a pubsub service and be done
-      if (final) {
-        id += 1;
-        publishStream.clients.forEach(async (client) => {
-          // if they want to translate, pipe through translate
-          // could be improved by adding a cache for entries, calling translate ideally once
-          let translated;
-          let latency;
-          if (listenerConfig[client.id].languageCode) {
-            try {
-              const start = new Date();
-              const response = await translateClient
-                .translateText({
-                  SourceLanguageCode: 'en',
-                  TargetLanguageCode: listenerConfig[client.id].languageCode,
-                  Text: text,
-                })
-                .promise();
+      publishStream.clients.forEach(async (client) => {
+        // if they want to translate, pipe through translate
+        // could be improved by adding a cache for entries, calling translate ideally once
+        let translated;
+        let latency;
+        if (listenerConfig[client.id].languageCode) {
+          try {
+            const start = new Date();
+            const response = await translateClient
+              .translateText({
+                SourceLanguageCode: 'en',
+                TargetLanguageCode: listenerConfig[client.id].languageCode,
+                Text: text,
+              })
+              .promise();
 
-              translated = response.TranslatedText;
-              latency = new Date() - start;
-            } catch (e) {
-              console.error(e);
-            }
+            translated = response.TranslatedText;
+            latency = new Date() - start;
+          } catch (e) {
+            console.error(e);
           }
+        }
 
-          if (client.readyState === WebSocket.OPEN) {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(
+            JSON.stringify({
+              id,
+              event: 'original',
+              value: text,
+              isPartial: result.IsPartial,
+            })
+          );
+          if (translated) {
             client.send(
               JSON.stringify({
                 id,
-                event: 'text',
-                languageCode: 'en',
-                value: text,
+                event: 'translated',
+                languageCode: listenerConfig[client.id].languageCode,
+                value: translated,
                 isPartial: result.IsPartial,
+                latency,
               })
             );
-            if (translated) {
-              client.send(
-                JSON.stringify({
-                  id,
-                  event: 'text',
-                  languageCode: listenerConfig[client.id].languageCode,
-                  value: translated,
-                  isPartial: result.IsPartial,
-                  latency,
-                })
-              );
-            }
           }
-        });
-      }
+        }
+      });
+
+      // increment id when the final utterance has been sent
+      if (final) id += 1;
     });
 
   return transcribeStream;
