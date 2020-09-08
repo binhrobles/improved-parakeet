@@ -3,8 +3,7 @@
 #  - only create eb deployment when images have changed
 #  - caching intermediate image builds
 ---
-trigger:
-- master
+trigger: none
 
 resources:
 - repo: self
